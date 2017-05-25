@@ -1,0 +1,22 @@
+FROM ubuntu:16.04
+
+RUN apt-get -qqy update && apt-get install -qqy git curl
+
+WORKDIR /tmp
+RUN curl -o go1.8.2.linux-amd64.tar.gz https://storage.googleapis.com/golang/go1.8.2.linux-amd64.tar.gz
+RUN tar xzvf go1.8.2.linux-amd64.tar.gz
+RUN mv go /usr/local
+
+RUN mkdir /gocode
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/gocode
+ENV PATH=$PATH:$GOPATH/bin:$GOROOT/bin
+RUN go get github.com/tools/godep
+RUN go get github.com/golang/lint/golint
+
+ENV SRC=$GOPATH/src/github.com/docker/swarm
+ADD . $SRC
+WORKDIR $SRC
+RUN go install .
+RUN go test -v -race `go list ./... | grep -v /vendor/`
+# RUN ./test/integration/run.sh
